@@ -1,0 +1,21 @@
+name: growtogether_data
+description: Capa de datos compartida (modelos, API y repositorios) entre la app móvil y el panel de administración de GrowTogether.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.4
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.7.0
+  flutter_secure_storage: ^9.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
