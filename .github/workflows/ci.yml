@@ -1,0 +1,41 @@
+name: CI
+
+# DATA es un paquete Flutter consumido por GrowTogetherAPP y GrowTogetherADMIN
+# por git ref con tag inmutable (ver pubspec.yaml de las apps).
+# Aqui no hay despliegue: el "release" del paquete es crear un tag vX.Y.Z.
+# Lo que SI hacemos es validar en cada push que el paquete sigue compilando
+# y los tests pasan, asi sabemos antes de tirar tag si algo se rompio.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'doc/**'
+      - 'README.md'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Analyze + tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: flutter analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: flutter test
+        run: flutter test
