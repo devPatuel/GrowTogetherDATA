@@ -1,7 +1,7 @@
 name: growtogether_data
 description: Capa de datos compartida (modelos, API y repositorios) entre la app móvil y el panel de administración de GrowTogether.
 publish_to: "none"
-version: 0.1.0
+version: 0.3.0
 
 environment:
   sdk: ^3.10.4
