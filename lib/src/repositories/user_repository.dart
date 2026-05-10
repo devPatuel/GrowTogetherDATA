@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../api/api_exceptions.dart';
 import '../api/dio_client.dart';
+import '../api/dio_error_mapper.dart';
 import '../models/usuario.dart';
 
 class UserRepository {
@@ -16,11 +17,7 @@ class UserRepository {
       if (e.response?.statusCode == 404) {
         throw ApiException('Usuario no encontrado', statusCode: 404);
       }
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError) {
-        throw NetworkException();
-      }
-      throw ApiException('Error al obtener el perfil');
+      handleDioError(e, 'Error al obtener el perfil');
     }
   }
 
@@ -46,7 +43,7 @@ class UserRepository {
       if (e.response?.statusCode == 409) {
         throw BadRequestException('El email ya está en uso');
       }
-      throw ApiException('Error al actualizar el perfil');
+      handleDioError(e, 'Error al actualizar el perfil');
     }
   }
 
@@ -57,11 +54,7 @@ class UserRepository {
       if (idioma != null) data['idioma'] = idioma;
       await _client.dio.put('/usuarios/perfil/$id/preferencias', data: data);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError) {
-        throw NetworkException();
-      }
-      throw ApiException('Error al actualizar las preferencias');
+      handleDioError(e, 'Error al actualizar las preferencias');
     }
   }
 
@@ -75,11 +68,7 @@ class UserRepository {
       if (e.response?.statusCode == 400) {
         throw BadRequestException('La contraseña actual no es correcta');
       }
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError) {
-        throw NetworkException();
-      }
-      throw ApiException('Error al cambiar la contraseña');
+      handleDioError(e, 'Error al cambiar la contraseña');
     }
   }
 }

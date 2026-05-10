@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../api/api_exceptions.dart';
 import '../api/dio_client.dart';
+import '../api/dio_error_mapper.dart';
 import '../models/audit_log.dart';
 import '../models/consejo.dart';
 import '../models/metricas_admin.dart';
@@ -29,7 +30,7 @@ class AdminRepository {
           .map((e) => UsuarioAdmin.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al listar usuarios');
+      _mapearError(e, 'Error al listar usuarios');
     }
   }
 
@@ -39,7 +40,7 @@ class AdminRepository {
       await _client.dio.delete('/admin/usuarios/$usuarioId',
           data: {'motivo': motivo});
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al bloquear el usuario');
+      _mapearError(e, 'Error al bloquear el usuario');
     }
   }
 
@@ -48,7 +49,7 @@ class AdminRepository {
     try {
       await _client.dio.put('/admin/usuarios/$usuarioId/desbloquear');
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al desbloquear el usuario');
+      _mapearError(e, 'Error al desbloquear el usuario');
     }
   }
 
@@ -66,7 +67,7 @@ class AdminRepository {
       });
       return UsuarioAdmin.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al crear el admin');
+      _mapearError(e, 'Error al crear el admin');
     }
   }
 
@@ -76,7 +77,7 @@ class AdminRepository {
       await _client.dio.put('/admin/usuarios/$usuarioId/resetear-contrasena',
           data: {'newPassword': nuevaPassword});
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al resetear la contraseña');
+      _mapearError(e, 'Error al resetear la contraseña');
     }
   }
 
@@ -91,7 +92,7 @@ class AdminRepository {
           .map((e) => Consejo.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al listar los consejos');
+      _mapearError(e, 'Error al listar los consejos');
     }
   }
 
@@ -113,7 +114,7 @@ class AdminRepository {
       });
       return Consejo.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al crear el consejo');
+      _mapearError(e, 'Error al crear el consejo');
     }
   }
 
@@ -135,7 +136,7 @@ class AdminRepository {
       });
       return Consejo.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al editar el consejo');
+      _mapearError(e, 'Error al editar el consejo');
     }
   }
 
@@ -144,7 +145,7 @@ class AdminRepository {
     try {
       await _client.dio.delete('/admin/recursos/$id');
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al eliminar el consejo');
+      _mapearError(e, 'Error al eliminar el consejo');
     }
   }
 
@@ -156,7 +157,7 @@ class AdminRepository {
       final response = await _client.dio.get('/admin/metricas');
       return MetricasAdmin.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al obtener las métricas');
+      _mapearError(e, 'Error al obtener las métricas');
     }
   }
 
@@ -171,7 +172,7 @@ class AdminRepository {
           .map((e) => AuditLog.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al obtener el audit log');
+      _mapearError(e, 'Error al obtener el audit log');
     }
   }
 
@@ -184,7 +185,7 @@ class AdminRepository {
           .map((e) => AuditLog.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      throw _mapearError(e, 'Error al obtener el audit del usuario');
+      _mapearError(e, 'Error al obtener el audit del usuario');
     }
   }
 
@@ -196,21 +197,22 @@ class AdminRepository {
     return '${fecha.year}-$mes-$dia';
   }
 
-  ApiException _mapearError(DioException e, String mensajeGenerico) {
+  /// Caso especial admin: la API puede devolver 400 con un mensaje en el
+  /// cuerpo (mapa de errores de validación o string) que queremos propagar
+  /// al panel para mostrarlo al usuario. También trata 403 como un 401
+  /// porque el panel solo se muestra a admins: si no autorizan algo, la
+  /// sesión ya no es válida.
+  Never _mapearError(DioException e, String mensajeGenerico) {
     final status = e.response?.statusCode;
     if (status == 400) {
       final body = e.response?.data;
       if (body is Map && body.values.isNotEmpty) {
-        return BadRequestException(body.values.first?.toString() ?? mensajeGenerico);
+        throw BadRequestException(body.values.first?.toString() ?? mensajeGenerico);
       }
-      if (body is String && body.isNotEmpty) return BadRequestException(body);
-      return BadRequestException(mensajeGenerico);
+      if (body is String && body.isNotEmpty) throw BadRequestException(body);
+      throw BadRequestException(mensajeGenerico);
     }
-    if (status == 401 || status == 403) return UnauthorizedException();
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.connectionError) {
-      return NetworkException();
-    }
-    return ApiException(mensajeGenerico, statusCode: status);
+    if (status == 403) throw UnauthorizedException();
+    handleDioError(e, mensajeGenerico);
   }
 }

@@ -29,3 +29,7 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 /build/
 /coverage/
+
+# Documentos confidenciales (DECISIONS, planes, auditorías) viven aquí pero
+# no deben subirse al repo público.
+docs/

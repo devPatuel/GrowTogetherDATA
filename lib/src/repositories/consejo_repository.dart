@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../api/api_exceptions.dart';
 import '../api/dio_client.dart';
+import '../api/dio_error_mapper.dart';
 import '../models/consejo.dart';
 
 /// Repositorio cliente para consultar el consejo del día desde la app.
@@ -20,11 +20,7 @@ class ConsejoRepository {
       if (response.statusCode == 204 || response.data == null) return null;
       return Consejo.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError) {
-        throw NetworkException();
-      }
-      throw ApiException('Error al obtener el consejo de hoy');
+      handleDioError(e, 'Error al obtener el consejo de hoy');
     }
   }
 }

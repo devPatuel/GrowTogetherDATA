@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../api/api_exceptions.dart';
 import '../api/dio_client.dart';
+import '../api/dio_error_mapper.dart';
 import '../models/desafio.dart';
 import '../models/participante_desafio.dart';
 import '../models/registro_desafio.dart';
@@ -19,7 +20,7 @@ class DesafioRepository {
       final list = response.data as List;
       return list.map((json) => Desafio.fromJson(json as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      _handleError(e, 'Error al cargar desafíos');
+      _handleErrorConMensaje(e, 'Error al cargar desafíos');
     }
   }
 
@@ -28,7 +29,7 @@ class DesafioRepository {
       final response = await _client.dio.get('/desafios/$id');
       return Desafio.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      _handleError(e, 'Error al cargar el desafío');
+      _handleErrorConMensaje(e, 'Error al cargar el desafío');
     }
   }
 
@@ -38,7 +39,7 @@ class DesafioRepository {
       final list = response.data as List;
       return list.map((json) => ParticipanteDesafio.fromJson(json as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      _handleError(e, 'Error al cargar el ranking');
+      _handleErrorConMensaje(e, 'Error al cargar el ranking');
     }
   }
 
@@ -58,7 +59,7 @@ class DesafioRepository {
       final list = response.data as List;
       return list.map((json) => RegistroDesafio.fromJson(json as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      _handleError(e, 'Error al cargar el historial');
+      _handleErrorConMensaje(e, 'Error al cargar el historial');
     }
   }
 
@@ -101,7 +102,7 @@ class DesafioRepository {
           throw BadRequestException(msg);
         }
       }
-      _handleError(e, 'Error al crear el desafío');
+      _handleErrorConMensaje(e, 'Error al crear el desafío');
     }
   }
 
@@ -133,7 +134,7 @@ class DesafioRepository {
       final response = await _client.dio.put('/desafios/$id', data: data);
       return Desafio.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      _handleError(e, 'Error al editar el desafío');
+      _handleErrorConMensaje(e, 'Error al editar el desafío');
     }
   }
 
@@ -141,7 +142,7 @@ class DesafioRepository {
     try {
       await _client.dio.delete('/desafios/$id');
     } on DioException catch (e) {
-      _handleError(e, 'Error al eliminar el desafío');
+      _handleErrorConMensaje(e, 'Error al eliminar el desafío');
     }
   }
 
@@ -149,7 +150,7 @@ class DesafioRepository {
     try {
       await _client.dio.delete('/desafios/$id/abandonar');
     } on DioException catch (e) {
-      _handleError(e, 'Error al abandonar el desafío');
+      _handleErrorConMensaje(e, 'Error al abandonar el desafío');
     }
   }
 
@@ -158,7 +159,7 @@ class DesafioRepository {
       final response = await _client.dio.post('/desafios/$id/unirse');
       return ParticipanteDesafio.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      _handleError(e, 'Error al unirse al desafío');
+      _handleErrorConMensaje(e, 'Error al unirse al desafío');
     }
   }
 
@@ -172,7 +173,7 @@ class DesafioRepository {
       );
       return ParticipanteDesafio.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      _handleError(e, 'Error al completar el desafío');
+      _handleErrorConMensaje(e, 'Error al completar el desafío');
     }
   }
 
@@ -186,26 +187,26 @@ class DesafioRepository {
       );
       return ParticipanteDesafio.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      _handleError(e, 'Error al desmarcar el desafío');
+      _handleErrorConMensaje(e, 'Error al desmarcar el desafío');
     }
   }
 
-  Never _handleError(DioException e, String defaultMsg) {
-    if (e.response?.statusCode == 401) {
-      throw UnauthorizedException();
-    }
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.connectionError) {
-      throw NetworkException('No se pudo conectar al servidor');
-    }
-    final data = e.response?.data;
-    if (data is Map) {
-      final mensaje = data['message'] ?? data.values.firstOrNull;
-      if (mensaje is String && mensaje.isNotEmpty) {
-        throw ApiException(mensaje, statusCode: e.response?.statusCode);
+  /// Caso especial: la API de desafíos a veces devuelve mensajes de negocio
+  /// en el cuerpo (`message` o primer valor del Map). Si los hay, los
+  /// propagamos en la [ApiException] para que la UI los pueda mostrar.
+  /// Para todo lo demás delegamos en [handleDioError].
+  Never _handleErrorConMensaje(DioException e, String defaultMsg) {
+    final status = e.response?.statusCode;
+    if (status != null && status != 401 && status >= 400) {
+      final data = e.response?.data;
+      if (data is Map) {
+        final mensaje = data['message'] ?? data.values.firstOrNull;
+        if (mensaje is String && mensaje.isNotEmpty) {
+          throw ApiException(mensaje, statusCode: status);
+        }
       }
     }
-    throw ApiException(defaultMsg, statusCode: e.response?.statusCode);
+    handleDioError(e, defaultMsg);
   }
 }
 

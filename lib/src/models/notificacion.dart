@@ -1,14 +1,19 @@
-/// Modelo de recordatorio asociado a un habito.
+/// Recordatorio asociado a un hábito.
 ///
-/// La hora se guarda como dos enteros (hora y minuto) en lugar de un DateTime
-/// porque la API la persiste como java.sql.Time (solo hora, sin fecha) y se
-/// serializa como string "HH:mm:ss".
+/// La hora se guarda como dos enteros (hora y minuto) en lugar de un
+/// `DateTime` porque la API la persiste como `java.sql.Time` (solo hora,
+/// sin fecha) y se serializa como string `"HH:mm:ss"`.
+///
+/// La frecuencia real con la que la noti se dispara la decide el cliente
+/// derivándola del hábito asociado: diaria si el hábito es DIARIO, o
+/// limitada a sus `diasSemana` si es PERSONALIZADO. El backend mantiene
+/// internamente un campo `frecuencia` por compatibilidad histórica, pero
+/// el cliente lo ignora.
 class Notificacion {
   final int id;
   final String mensaje;
   final int hora;
   final int minuto;
-  final String frecuencia;
   final bool activa;
   final int habitoId;
 
@@ -17,12 +22,11 @@ class Notificacion {
     required this.mensaje,
     required this.hora,
     required this.minuto,
-    this.frecuencia = 'DIARIO',
     this.activa = true,
     required this.habitoId,
   });
 
-  /// Devuelve la hora formateada como "HH:mm:ss" tal y como la espera la API.
+  /// Hora formateada como `"HH:mm:ss"` tal y como la espera la API.
   String get horaFormateada =>
       '${hora.toString().padLeft(2, '0')}:${minuto.toString().padLeft(2, '0')}:00';
 
@@ -31,7 +35,6 @@ class Notificacion {
     String? mensaje,
     int? hora,
     int? minuto,
-    String? frecuencia,
     bool? activa,
     int? habitoId,
   }) {
@@ -40,7 +43,6 @@ class Notificacion {
       mensaje: mensaje ?? this.mensaje,
       hora: hora ?? this.hora,
       minuto: minuto ?? this.minuto,
-      frecuencia: frecuencia ?? this.frecuencia,
       activa: activa ?? this.activa,
       habitoId: habitoId ?? this.habitoId,
     );
@@ -56,7 +58,6 @@ class Notificacion {
       mensaje: json['mensaje'] as String? ?? '',
       hora: h,
       minuto: m,
-      frecuencia: json['frecuencia'] as String? ?? 'DIARIO',
       activa: json['activa'] as bool? ?? true,
       habitoId: json['habitoId'] as int,
     );

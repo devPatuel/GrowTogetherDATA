@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../api/api_exceptions.dart';
 import '../api/dio_client.dart';
+import '../api/dio_error_mapper.dart';
 import '../models/solicitud_amistad.dart';
 import '../models/usuario.dart';
 
@@ -18,7 +19,7 @@ class AmistadRepository {
       final lista = response.data as List;
       return lista.map((e) => Usuario.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      throw _mapear(e, 'Error al buscar usuarios');
+      _mapear(e, 'Error al buscar usuarios');
     }
   }
 
@@ -37,7 +38,7 @@ class AmistadRepository {
       });
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
-      throw _mapear(e, 'Error al buscar el usuario');
+      _mapear(e, 'Error al buscar el usuario');
     }
   }
 
@@ -47,7 +48,7 @@ class AmistadRepository {
       final lista = response.data as List;
       return lista.map((e) => Usuario.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
-      throw _mapear(e, 'Error al cargar los amigos');
+      _mapear(e, 'Error al cargar los amigos');
     }
   }
 
@@ -55,7 +56,7 @@ class AmistadRepository {
     try {
       await _client.dio.delete('/usuarios/amigos/$amigoId');
     } on DioException catch (e) {
-      throw _mapear(e, 'Error al eliminar el amigo');
+      _mapear(e, 'Error al eliminar el amigo');
     }
   }
 
@@ -66,7 +67,7 @@ class AmistadRepository {
       );
       return SolicitudAmistad.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      throw _mapear(e, 'Error al enviar la solicitud');
+      _mapear(e, 'Error al enviar la solicitud');
     }
   }
 
@@ -80,7 +81,7 @@ class AmistadRepository {
           .map((e) => SolicitudAmistad.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      throw _mapear(e, 'Error al cargar las peticiones recibidas');
+      _mapear(e, 'Error al cargar las peticiones recibidas');
     }
   }
 
@@ -94,7 +95,7 @@ class AmistadRepository {
           .map((e) => SolicitudAmistad.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      throw _mapear(e, 'Error al cargar las peticiones enviadas');
+      _mapear(e, 'Error al cargar las peticiones enviadas');
     }
   }
 
@@ -102,7 +103,7 @@ class AmistadRepository {
     try {
       await _client.dio.put('/usuarios/amistades/solicitudes/$solicitudId/aceptar');
     } on DioException catch (e) {
-      throw _mapear(e, 'Error al aceptar la solicitud');
+      _mapear(e, 'Error al aceptar la solicitud');
     }
   }
 
@@ -110,7 +111,7 @@ class AmistadRepository {
     try {
       await _client.dio.put('/usuarios/amistades/solicitudes/$solicitudId/rechazar');
     } on DioException catch (e) {
-      throw _mapear(e, 'Error al rechazar la solicitud');
+      _mapear(e, 'Error al rechazar la solicitud');
     }
   }
 
@@ -118,15 +119,14 @@ class AmistadRepository {
     try {
       await _client.dio.delete('/usuarios/amistades/solicitudes/$solicitudId');
     } on DioException catch (e) {
-      throw _mapear(e, 'Error al cancelar la solicitud');
+      _mapear(e, 'Error al cancelar la solicitud');
     }
   }
 
-  ApiException _mapear(DioException e, String fallback) {
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.connectionError) {
-      return NetworkException();
-    }
+  /// Caso especial amistades: 400 con mensaje en el cuerpo (validaciones de
+  /// negocio: ya eres amigo, ya hay solicitud pendiente…) y 404 como
+  /// "recurso no encontrado". El resto delega en [handleDioError].
+  Never _mapear(DioException e, String fallback) {
     final status = e.response?.statusCode;
     if (status == 400) {
       final data = e.response?.data;
@@ -137,12 +137,12 @@ class AmistadRepository {
       } else if (data is String && data.isNotEmpty) {
         mensaje = data;
       }
-      return BadRequestException(mensaje);
+      throw BadRequestException(mensaje);
     }
     if (status == 404) {
-      return ApiException('Recurso no encontrado', statusCode: 404);
+      throw ApiException('Recurso no encontrado', statusCode: 404);
     }
-    return ApiException(fallback, statusCode: status);
+    handleDioError(e, fallback);
   }
 }
 

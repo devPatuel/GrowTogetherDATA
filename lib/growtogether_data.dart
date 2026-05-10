@@ -10,6 +10,7 @@ export 'src/api/api_config.dart';
 export 'src/api/api_exceptions.dart';
 export 'src/api/auth_interceptor.dart';
 export 'src/api/dio_client.dart';
+export 'src/api/dio_error_mapper.dart';
 
 // Local
 export 'src/local/secure_storage_service.dart';

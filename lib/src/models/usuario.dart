@@ -1,3 +1,9 @@
+/// Modelo de usuario para la app cliente.
+///
+/// Solo expone los campos que la app móvil necesita ver de su propio perfil
+/// o del de otros usuarios visibles. Para el panel de administración existe
+/// [UsuarioAdmin], que añade campos sensibles (estado de bloqueo, motivo,
+/// fecha) que no deben llegar a la app cliente.
 class Usuario {
   final int id;
   final String nombre;

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../api/api_exceptions.dart';
 import '../api/dio_client.dart';
+import '../api/dio_error_mapper.dart';
 import '../models/habito.dart';
 import '../models/registro_historial.dart';
 
@@ -25,7 +26,7 @@ class HabitoRepository {
       final list = response.data as List;
       return list.map((json) => Habito.fromJson(json)).toList();
     } on DioException catch (e) {
-      _handleError(e, 'Error al cargar hábitos');
+      handleDioError(e, 'Error al cargar hábitos');
     }
   }
 
@@ -59,7 +60,7 @@ class HabitoRepository {
           throw BadRequestException(msg);
         }
       }
-      _handleError(e, 'Error al crear hábito');
+      handleDioError(e, 'Error al crear hábito');
     }
   }
 
@@ -84,7 +85,7 @@ class HabitoRepository {
       final response = await _client.dio.put('/habitos/$id', data: data);
       return Habito.fromJson(response.data);
     } on DioException catch (e) {
-      _handleError(e, 'Error al editar hábito');
+      handleDioError(e, 'Error al editar hábito');
     }
   }
 
@@ -92,7 +93,7 @@ class HabitoRepository {
     try {
       await _client.dio.delete('/habitos/$id');
     } on DioException catch (e) {
-      _handleError(e, 'Error al eliminar hábito');
+      handleDioError(e, 'Error al eliminar hábito');
     }
   }
 
@@ -108,7 +109,7 @@ class HabitoRepository {
       );
       return Habito.fromJson(response.data);
     } on DioException catch (e) {
-      _handleError(e, 'Error al completar hábito');
+      handleDioError(e, 'Error al completar hábito');
     }
   }
 
@@ -124,7 +125,7 @@ class HabitoRepository {
       );
       return Habito.fromJson(response.data);
     } on DioException catch (e) {
-      _handleError(e, 'Error al desmarcar hábito');
+      handleDioError(e, 'Error al desmarcar hábito');
     }
   }
 
@@ -133,7 +134,7 @@ class HabitoRepository {
       final response = await _client.dio.get('/habitos/$id/progreso');
       return Habito.fromJson(response.data);
     } on DioException catch (e) {
-      _handleError(e, 'Error al cargar progreso');
+      handleDioError(e, 'Error al cargar progreso');
     }
   }
 
@@ -158,18 +159,8 @@ class HabitoRepository {
       final list = response.data as List;
       return list.map((json) => RegistroHistorial.fromJson(json)).toList();
     } on DioException catch (e) {
-      _handleError(e, 'Error al cargar historial');
+      handleDioError(e, 'Error al cargar historial');
     }
   }
 
-  Never _handleError(DioException e, String defaultMsg) {
-    if (e.response?.statusCode == 401) {
-      throw UnauthorizedException();
-    }
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.connectionError) {
-      throw NetworkException('No se pudo conectar al servidor');
-    }
-    throw ApiException(defaultMsg);
-  }
 }

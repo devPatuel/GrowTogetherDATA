@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../api/api_exceptions.dart';
 import '../api/dio_client.dart';
+import '../api/dio_error_mapper.dart';
 import '../local/secure_storage_service.dart';
 import '../models/usuario.dart';
 
@@ -28,14 +29,11 @@ class AuthRepository {
 
       return usuario;
     } on DioException catch (e) {
+      // 401 en login = credenciales incorrectas, no sesión expirada
       if (e.response?.statusCode == 401) {
         throw BadRequestException('Credenciales incorrectas');
       }
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError) {
-        throw NetworkException('No se pudo conectar al servidor');
-      }
-      throw ApiException('Error al iniciar sesión');
+      handleDioError(e, 'Error al iniciar sesión');
     }
   }
 
@@ -59,11 +57,7 @@ class AuthRepository {
       if (e.response?.statusCode == 409) {
         throw BadRequestException('El email ya está registrado');
       }
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError) {
-        throw NetworkException('No se pudo conectar al servidor');
-      }
-      throw ApiException('Error al registrarse');
+      handleDioError(e, 'Error al registrarse');
     }
   }
 

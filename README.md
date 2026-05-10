@@ -42,6 +42,7 @@ lib/
     │   ├── desafio.dart
     │   ├── habito.dart
     │   ├── metricas_admin.dart             + NuevosUsuariosMes
+    │   ├── notificacion.dart               Recordatorio asociado a un hábito
     │   ├── participante_desafio.dart
     │   ├── registro_desafio.dart
     │   ├── registro_historial.dart
@@ -55,6 +56,7 @@ lib/
         ├── consejo_repository.dart         Cliente: consejo de hoy
         ├── desafio_repository.dart
         ├── habito_repository.dart
+        ├── notificacion_repository.dart    CRUD de recordatorios
         └── user_repository.dart
 ```
 
@@ -62,12 +64,28 @@ lib/
 
 ## Uso desde una app
 
+En desarrollo local se consume por **path** (cambios al instante sin publicar):
+
 ```yaml
 # pubspec.yaml de la app que lo consume
 dependencies:
   growtogether_data:
     path: ../GrowTogetherDATA
 ```
+
+En CI y producción se consume por **git + tag** para fijar una versión concreta:
+
+```yaml
+dependencies:
+  growtogether_data:
+    git:
+      url: https://github.com/devPatuel/GrowTogetherDATA.git
+      ref: v0.3.0
+```
+
+El truco habitual es tener `pubspec_overrides.yaml` con el `path` en local y
+borrarlo en CI (lo hace el workflow), de modo que el `pubspec.yaml` siempre
+queda con el `git: ref: vX.Y.Z` que se entrega.
 
 ```dart
 import 'package:growtogether_data/growtogether_data.dart';
