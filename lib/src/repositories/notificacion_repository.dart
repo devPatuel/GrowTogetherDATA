@@ -41,8 +41,6 @@ class NotificacionRepository {
   ///
   /// La frecuencia real (diaria o por días específicos) se infiere del
   /// hábito asociado en el servicio de notificaciones locales del cliente.
-  /// El backend exige el campo `frecuencia` en el DTO por compatibilidad
-  /// histórica: enviamos siempre `'DIARIO'` hasta que la API lo elimine.
   Future<Notificacion> crear({
     required int habitoId,
     required String mensaje,
@@ -55,7 +53,6 @@ class NotificacionRepository {
         'habitoId': habitoId,
         'mensaje': mensaje,
         'horaProgramada': _formatHora(hora, minuto),
-        'frecuencia': 'DIARIO',
         'activa': activa,
       });
       return Notificacion.fromJson(response.data);
@@ -78,7 +75,6 @@ class NotificacionRepository {
         'habitoId': habitoId,
         'mensaje': mensaje,
         'horaProgramada': _formatHora(hora, minuto),
-        'frecuencia': 'DIARIO',
         'activa': activa,
       });
       return Notificacion.fromJson(response.data);
