@@ -23,6 +23,14 @@ de duplicar modelos y repositorios, los unifico aquí:
 
 ---
 
+## Decisiones de arquitectura
+
+Las decisiones que afectan al paquete (Dio como cliente HTTP, `flutter_secure_storage`
+para credenciales, modelos separados `Usuario`/`UsuarioAdmin` por audiencia, versionado
+por tags git, etc.) están documentadas en [`docs/DECISIONS.md`](docs/DECISIONS.md).
+
+---
+
 ## Contenido
 
 ```
